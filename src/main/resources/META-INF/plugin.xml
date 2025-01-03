@@ -5,28 +5,35 @@
 
   <!-- Public plugin name should be written in Title Case.
        Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
-  <name>Secura-code</name>
+  <name>Secura-Code</name>
 
   <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-  <vendor email="support@yourcompany.com" url="https://www.yourcompany.com">YourCompany</vendor>
+  <vendor email="support@proxypasanga.com" url="https://www.proxypasanga.com">Proxy Pasanga</vendor>
 
   <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
        Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
        Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
   <description><![CDATA[
-    Enter short description for your plugin here.<br>
-    <em>most HTML tags may be used</em>
+    A plugin for performing code's security analysis with static code analysis and AI integration
   ]]></description>
 
   <!-- Product and plugin compatibility requirements.
        Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
   <depends>com.intellij.modules.platform</depends>
 
-  <!-- Define the actions provided by the plugin -->
+  <extensions defaultExtensionNs="com.intellij">
+    <!-- Register the tool window -->
+    <toolWindow id="Secura-Code Plugin Tool Window"
+                anchor="bottom"
+                factoryClass="com.springbootprojects.securacode.MyPluginToolWindowFactory"/>
+  </extensions>
+
   <actions>
-    <action id="MyPluginAction" class="com.springbootprojects.securacode.MyPluginAction" text="Hello Plugin" description="My first IntelliJ plugin">
-      <add-to-group group-id="ToolsMenu" anchor="last"/>
-    </action>
+    <!-- Register the action that opens the tool window -->
+    <action id="ShowStaticAnalysisAction"
+            class="com.springbootprojects.securacode.MyPluginAction"
+            text="Show Static Code Analysis"
+            description="Displays the results of static code analysis in a tool window"/>
   </actions>
 
   <!-- Extension points defined by the plugin.

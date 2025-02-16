@@ -20,6 +20,6 @@ class MyPluginToolWindowFactory : ToolWindowFactory {
         toolWindow.contentManager.addContent(content)
 
         // Trigger the analysis when the tool window is created
-        terminalPanel.startCodeAnalysis(project)
+        terminalPanel.startCodeAnalysis()
     }
 }

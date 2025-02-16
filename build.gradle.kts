@@ -20,6 +20,13 @@ intellij {
   plugins.set(listOf(/* Plugin Dependencies */))
 }
 
+dependencies {
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
+  implementation("com.squareup.okhttp3:okhttp:4.9.1")
+  implementation("org.json:json:20210307")
+}
+
+
 tasks {
   // Set the JVM compatibility versions
   withType<JavaCompile> {

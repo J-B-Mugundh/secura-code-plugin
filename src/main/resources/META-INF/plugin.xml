@@ -22,17 +22,14 @@
   <depends>com.intellij.modules.platform</depends>
 
   <extensions defaultExtensionNs="com.intellij">
-    <!-- Register the tool window -->
-    <toolWindow id="Secura-Code Plugin Tool Window"
-                anchor="bottom"
-                factoryClass="com.springbootprojects.securacode.MyPluginToolWindowFactory"/>
+    <toolWindow id="Secura Code" factoryClass="com.springbootprojects.securacode.MyPluginToolWindowFactory" anchor="right" />
   </extensions>
 
   <actions>
     <!-- Register the action that opens the tool window -->
     <action id="ShowStaticAnalysisAction"
-            class="com.springbootprojects.securacode.MyPluginAction"
-            text="Show Static Code Analysis"
+            class="com.springbootprojects.securacode.ShowStaticAnalysisAction"
+            text="Show Static Analysis"
             description="Displays the results of static code analysis in a tool window"/>
   </actions>
 

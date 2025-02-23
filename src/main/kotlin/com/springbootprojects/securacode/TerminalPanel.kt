@@ -1,8 +1,10 @@
 package com.springbootprojects.securacode
 
+
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+
 import javax.swing.*
-import java.awt.Font
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -10,13 +12,15 @@ import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
+import java.awt.*
 import java.io.IOException
-import okio.Buffer
-import java.awt.Desktop
+
+
 
 class TerminalPanel(private val project: Project) : JPanel() {
     private val textArea: JTextArea
     private val apiKey = "AIzaSyCcqEpu4SV0_HBdg8PPZKFz-xjyHOqXnWg"
+    private val editor = FileEditorManager.getInstance(project).selectedTextEditor
 
     init {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -26,120 +30,30 @@ class TerminalPanel(private val project: Project) : JPanel() {
             lineWrap = true
             wrapStyleWord = true
         }
+
         add(JScrollPane(textArea))
+        val startButton = JButton("Start Code Analysis").apply {
+            addActionListener { startCodeAnalysis() }
+        }
+        add(startButton)
     }
 
-    // Start the analysis of all Java files in the project
     fun startCodeAnalysis() {
         val sourceDir = File(project.basePath ?: "")
         if (!sourceDir.exists() || !sourceDir.isDirectory) {
-            appendText("Source directory is invalid or not found.\n")
+            appendText("⚠️ Source directory is invalid or not found.")
             return
         }
 
+        appendText("🔍 Scanning project for Java files...\n")
         sourceDir.walkTopDown().forEach { file ->
             if (file.isFile && file.extension == "java") {
                 val code = Files.readString(Paths.get(file.toURI()))
-
                 analyzeCodeWithGemini(code, file.name)
             }
         }
     }
 
-    // Send the code snippet to the Gemini API for analysis
-//   private fun analyzeCodeWithGemini(code: String, fileName: String) {
-//        val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey"
-//        val requestBody = """
-//            {
-//              "contents": [ {
-//                "parts": [ { "text": "Analyze the following Java code for security vulnerabilities:\n\n```java\n$code\n```\nFilename: $fileName" } ]
-//              }]
-//            }
-//        """.trimIndent()
-//
-//        val client = OkHttpClient()
-//        val body = requestBody.toRequestBody("application/json; charset=utf-8".toMediaType())
-//        val request = Request.Builder()
-//            .url(url)
-//            .post(body)
-//            .addHeader("Content-Type", "application/json")
-//            .build()
-//
-//        client.newCall(request).enqueue(object : Callback {
-//            override fun onFailure(call: Call, e: IOException) {
-//                appendText("Error analyzing $fileName: ${e.message}")
-//            }
-//
-//            override fun onResponse(call: Call, response: Response) {
-//                response.body?.string()?.let { responseBody ->
-//                    appendText("Raw response from API for $fileName:\n$responseBody\n")
-//                    if (response.isSuccessful) {
-//                        val vulnerabilities = parseGeminiResponse(responseBody)
-//                        appendText("Vulnerabilities in $fileName:\n$vulnerabilities")
-//                    } else {
-//                        appendText("Failed to analyze $fileName: ${response.message}")
-//                    }
-//                }
-//            }
-//        })
-//    }
-
-//    private fun analyzeCodeWithGemini(code: String, fileName: String) {
-//        val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey"
-//
-//        // Properly escape double quotes in Java code
-//        val escapedCode = code.replace("\"", "\\\"")
-//
-//        val requestBody = """
-//        {
-//          "contents": [ {
-//            "parts": [ { "text": "Analyze the following Java code for security vulnerabilities:\n\n```java\n$escapedCode\n```\nFilename: $fileName" } ]
-//          }]
-//        }
-//    """.trimIndent()
-//
-//        val client = OkHttpClient()
-//        val body = requestBody.toRequestBody("application/json; charset=utf-8".toMediaType())
-//        val request = Request.Builder()
-//            .url(url)
-//            .post(body)
-//            .addHeader("Content-Type", "application/json")
-//            .build()
-//        // Print the complete request (body and headers)
-//        appendText("Request URL: ${request.url}\n")
-//        appendText("Request Headers:\n${request.headers}\n")
-//
-//        try {
-//            // Get the request body as a string
-//            val buffer = Buffer()  // Use a Buffer to read the request body
-//            request.body?.writeTo(buffer) // Write the request body to the buffer
-//            val requestBodyString = buffer.readUtf8() // Read the buffer as a UTF-8 string
-//
-//            appendText("Request Body:\n$requestBodyString\n")
-//
-//        } catch (e: IOException) {
-//            appendText("Error reading request body: ${e.message}\n")
-//        }
-//
-//        client.newCall(request).enqueue(object : Callback {
-//            override fun onFailure(call: Call, e: IOException) {
-//                appendText("Error analyzing $fileName: ${e.message}")
-//            }
-//
-//            override fun onResponse(call: Call, response: Response) {
-//                response.body?.string()?.let { responseBody ->
-//                    appendText("Raw response from API for $fileName:\n$responseBody\n")
-//
-//                    if (response.isSuccessful) {
-//                        val vulnerabilities = parseGeminiResponse(responseBody)
-//                        appendText("Vulnerabilities in $fileName:\n$vulnerabilities")
-//                    } else {
-//                        appendText("Failed to analyze $fileName: ${response.message}")
-//                    }
-//                }
-//            }
-//        })
-//    }
 
     private fun analyzeCodeWithGemini(code: String, fileName: String) {
         val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey"
@@ -185,6 +99,8 @@ class TerminalPanel(private val project: Project) : JPanel() {
     /**
      * Saves the report as an HTML file and opens it in the browser.
      */
+
+    /**/
     private fun saveAndOpenHtmlReport(fileName: String, vulnerabilities: String) {
         val htmlContent = generateHtmlReport(fileName, vulnerabilities)
         val reportFile = File("code_analysis_report.html")
@@ -272,8 +188,6 @@ class TerminalPanel(private val project: Project) : JPanel() {
     }
 
 
-
-
     // Parse the response from Gemini API to extract vulnerabilities
     private fun parseGeminiResponse(responseBody: String): String {
         val jsonResponse = JSONObject(responseBody)
@@ -306,4 +220,11 @@ class TerminalPanel(private val project: Project) : JPanel() {
             textArea.caretPosition = textArea.document.length
         }
     }
+
+
+
+
 }
+
+
+

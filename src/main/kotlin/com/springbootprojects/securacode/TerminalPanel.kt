@@ -1,9 +1,7 @@
 package com.springbootprojects.securacode
 
 
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
-
 import javax.swing.*
 import java.io.File
 import java.nio.file.Files
@@ -19,8 +17,14 @@ import java.io.IOException
 
 class TerminalPanel(private val project: Project) : JPanel() {
     private val textArea: JTextArea
+    //LLM SECRET
     private val apiKey = "AIzaSyCcqEpu4SV0_HBdg8PPZKFz-xjyHOqXnWg"
-    private val editor = FileEditorManager.getInstance(project).selectedTextEditor
+    //SONAR SECRET
+    private val sonarToken = "bd585e14e8b29ac3c181db20e5734276866ae6b8"
+    private val sonarProjectKey = "J-B-Mugundh:maven-plugin"
+    private val sonarUrl = "https://sonar.yourserver.com/api/project_analyses/create?project=$sonarProjectKey"
+
+//    private val editor = FileEditorManager.getInstance(project).selectedTextEditor
 
     init {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -38,7 +42,25 @@ class TerminalPanel(private val project: Project) : JPanel() {
         add(startButton)
     }
 
+//    fun startCodeAnalysis() {
+//        val sourceDir = File(project.basePath ?: "")
+//        if (!sourceDir.exists() || !sourceDir.isDirectory) {
+//            appendText("⚠️ Source directory is invalid or not found.")
+//            return
+//        }
+//
+//        appendText("🔍 Scanning project for Java files...\n")
+//        sourceDir.walkTopDown().forEach { file ->
+//            if (file.isFile && file.extension == "java") {
+//                val code = Files.readString(Paths.get(file.toURI()))
+//                analyzeCodeWithGemini(code, file.name)
+//            }
+//        }
+//    }
+
     fun startCodeAnalysis() {
+        appendText("🚀 Starting Securacode analysis...\n")
+
         val sourceDir = File(project.basePath ?: "")
         if (!sourceDir.exists() || !sourceDir.isDirectory) {
             appendText("⚠️ Source directory is invalid or not found.")
@@ -48,12 +70,53 @@ class TerminalPanel(private val project: Project) : JPanel() {
         appendText("🔍 Scanning project for Java files...\n")
         sourceDir.walkTopDown().forEach { file ->
             if (file.isFile && file.extension == "java") {
-                val code = Files.readString(Paths.get(file.toURI()))
-                analyzeCodeWithGemini(code, file.name)
+                try {
+                    val code = Files.readString(Paths.get(file.toURI()))
+                    triggerSonarQubeAnalysis(code, file.name) { success ->
+                        if (success) {
+                            appendText("✅ Sent ${file.name} for Securacode analysis.\n")
+                            analyzeCodeWithGemini(code, file.name)
+                        } else {
+                            appendText("❌ Failed to send ${file.name} to SonarQube.")
+                        }
+                    }
+                } catch (e: IOException) {
+                    appendText("⚠️ Error reading file ${file.name}: ${e.message}")
+                }
             }
         }
     }
 
+    private fun triggerSonarQubeAnalysis(code: String, fileName: String, callback: (Boolean) -> Unit) {
+        val client = OkHttpClient()
+        val sonarScannerUrl = "https://sonar.yourserver.com/api/sources/lines?key=$sonarProjectKey&filename=$fileName"
+
+        val escapedCode = code.replace("\"", "\\\"") // Escape double quotes in JSON
+        val requestBody = """
+        {
+          "source": "$escapedCode"
+        }
+        """.trimIndent()
+
+        val request = Request.Builder()
+            .url(sonarScannerUrl)
+            .post(requestBody.toRequestBody("application/json".toMediaType()))
+            .addHeader("Authorization", Credentials.basic(sonarToken, ""))
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                appendText("❌ SonarQube API error: ${e.message}")
+                callback(false)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+//                val responseBody = response.body?.string() ?: ""
+               // appendText("SonarQube Upload Response: $responseBody")
+                callback(response.isSuccessful)
+            }
+        })
+    }
 
     private fun analyzeCodeWithGemini(code: String, fileName: String) {
         val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey"
@@ -96,11 +159,6 @@ class TerminalPanel(private val project: Project) : JPanel() {
         })
     }
 
-    /**
-     * Saves the report as an HTML file and opens it in the browser.
-     */
-
-    /**/
     private fun saveAndOpenHtmlReport(fileName: String, vulnerabilities: String) {
         val htmlContent = generateHtmlReport(fileName, vulnerabilities)
         val reportFile = File("code_analysis_report.html")
@@ -187,7 +245,6 @@ class TerminalPanel(private val project: Project) : JPanel() {
         return formattedReport.toString()
     }
 
-
     // Parse the response from Gemini API to extract vulnerabilities
     private fun parseGeminiResponse(responseBody: String): String {
         val jsonResponse = JSONObject(responseBody)
@@ -220,8 +277,6 @@ class TerminalPanel(private val project: Project) : JPanel() {
             textArea.caretPosition = textArea.document.length
         }
     }
-
-
 
 
 }
